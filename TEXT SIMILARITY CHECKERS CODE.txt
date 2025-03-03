@@ -1,0 +1,122 @@
+import java.util.*;
+
+public class TextSimilarity {
+    
+    public static Set<String> tokenize(String text) {
+        return new HashSet<>(Arrays.asList(text.toLowerCase().split("\\s+")));
+    }
+    
+    public static double jaccardSimilarity(String text1, String text2) {
+        Set<String> set1 = tokenize(text1);
+        Set<String> set2 = tokenize(text2);
+        
+        Set<String> intersection = new HashSet<>(set1);
+        intersection.retainAll(set2);
+        
+        Set<String> union = new HashSet<>(set1);
+        union.addAll(set2);
+        
+        return union.isEmpty() ? 0 : (double) intersection.size() / union.size();
+    }
+    
+    public static double cosineSimilarity(String text1, String text2) {
+        Map<String, Integer> freq1 = getWordFrequency(text1);
+        Map<String, Integer> freq2 = getWordFrequency(text2);
+        
+        Set<String> commonWords = new HashSet<>(freq1.keySet());
+        commonWords.retainAll(freq2.keySet());
+        
+        double numerator = 0;
+        for (String word : commonWords) {
+            numerator += freq1.get(word) * freq2.get(word);
+        }
+        
+        double sum1 = freq1.values().stream().mapToDouble(i -> i * i).sum();
+        double sum2 = freq2.values().stream().mapToDouble(i -> i * i).sum();
+        double denominator = Math.sqrt(sum1) * Math.sqrt(sum2);
+        
+        return denominator == 0 ? 0 : numerator / denominator;
+    }
+    
+    public static double diceCoefficient(String text1, String text2) {
+        Set<String> set1 = tokenize(text1);
+        Set<String> set2 = tokenize(text2);
+        
+        Set<String> intersection = new HashSet<>(set1);
+        intersection.retainAll(set2);
+        
+        return (2.0 * intersection.size()) / (set1.size() + set2.size());
+    }
+    
+    public static Map<String, Integer> getWordFrequency(String text) {
+        Map<String, Integer> freqMap = new HashMap<>();
+        for (String word : text.toLowerCase().split("\\s+")) {
+            freqMap.put(word, freqMap.getOrDefault(word, 0) + 1);
+        }
+        return freqMap;
+    }
+    
+    public static int longestCommonSubsequence(String text1, String text2) {
+        int len1 = text1.length(), len2 = text2.length();
+        int[][] dp = new int[len1 + 1][len2 + 1];
+
+        for (int i = 1; i <= len1; i++) {
+            for (int j = 1; j <= len2; j++) {
+                if (text1.charAt(i - 1) == text2.charAt(j - 1)) {
+                    dp[i][j] = dp[i - 1][j - 1] + 1;
+                } else {
+                    dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+                }
+            }
+        }
+        return dp[len1][len2];
+    }
+    
+    public static double longestCommonSubsequencePercentage(String text1, String text2) {
+        int lcsLength = longestCommonSubsequence(text1, text2);
+        int maxLength = Math.max(text1.length(), text2.length());
+        return maxLength == 0 ? 0 : (double) lcsLength / maxLength * 100;
+    }
+    
+    public static double levenshteinDistance(String text1, String text2) {
+        int len1 = text1.length(), len2 = text2.length();
+        int[][] dp = new int[len1 + 1][len2 + 1];
+
+        for (int i = 0; i <= len1; i++) {
+            for (int j = 0; j <= len2; j++) {
+                if (i == 0) dp[i][j] = j;
+                else if (j == 0) dp[i][j] = i;
+                else dp[i][j] = Math.min(Math.min(
+                    dp[i - 1][j] + 1, 
+                    dp[i][j - 1] + 1),
+                    dp[i - 1][j - 1] + (text1.charAt(i - 1) == text2.charAt(j - 1) ? 0 : 1)
+                );
+            }
+        }
+        return dp[len1][len2];
+    }
+    
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter first text:");
+        String text1 = scanner.nextLine();
+        System.out.println("Enter second text:");
+        String text2 = scanner.nextLine();
+        
+        double jaccard = jaccardSimilarity(text1, text2);
+        double cosine = cosineSimilarity(text1, text2);
+        double dice = diceCoefficient(text1, text2);
+        double levenshtein = levenshteinDistance(text1, text2);
+        int lcs = longestCommonSubsequence(text1, text2);
+        double lcsPercentage = longestCommonSubsequencePercentage(text1, text2);
+        
+        System.out.printf("Jaccard Similarity: %.4f\n", jaccard);
+        System.out.printf("Cosine Similarity: %.4f\n", cosine);
+        System.out.printf("Dice Coefficient: %.4f\n", dice);
+        System.out.printf("Levenshtein Distance: %.0f\n", levenshtein);
+        System.out.printf("Longest Common Subsequence Length: %d\n", lcs);
+        System.out.printf("Longest Common Subsequence Percentage: %.2f%%\n", lcsPercentage);
+        
+        scanner.close();
+    }
+}
